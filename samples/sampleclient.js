@@ -47,12 +47,17 @@ function SampleClient (options) {
       access_type: 'offline',
       scope: scopes.join(' ')
     });
+
     var server = http.createServer(function (request, response) {
       var qs = querystring.parse(url.parse(request.url).query);
+      if (!qs.code) {
+        return response.end('Callback request must contain code parameter (http://localhost:8080/callback?code=AUTHORIZATION_CODE)');
+      }
       self.oAuth2Client.getToken(qs.code, function (err, tokens) {
         if (err) {
           console.error('Error getting oAuth tokens: ' + err);
         }
+        self.tokens = tokens;
         self.oAuth2Client.setCredentials(tokens);
         self.isAuthenticated = true;
         response.end('Authentication successful! Please return to the console.');
@@ -61,6 +66,7 @@ function SampleClient (options) {
       });
     }).listen(8080, function () {
       // open the browser to the authorize url to start the workflow
+      console.log('Your authorization url: ', self.authorizeUrl);
       spawn('open', [self.authorizeUrl]);
     });
   };
